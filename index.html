@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Mario Game</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #87ceeb;
+      }
+
+      #game {
+        position: relative;
+        width: 800px;
+        height: 400px;
+        background: #87ceeb;
+        overflow: hidden;
+      }
+
+      #player {
+        position: absolute;
+        width: 40px;
+        height: 60px;
+        background: red;
+        bottom: 0;
+      }
+
+      .platform {
+        position: absolute;
+        background: #5c4033;
+      }
+
+      .coin {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: gold;
+        border-radius: 50%;
+      }
+
+      #score {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-family: Arial;
+        font-size: 24px;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game">
+      <div id="player"></div>
+      <div id="score">Score: 0</div>
+    </div>
+
+    <script>
+      const game = document.getElementById("game");
+      const player = document.getElementById("player");
+      const scoreElement = document.getElementById("score");
+
+      let playerX = 50;
+      let playerY = 0;
+      let velocityX = 0;
+      let velocityY = 0;
+      let isJumping = false;
+      let score = 0;
+
+      // Platform positions
+      const platforms = [
+        { x: 0, y: 350, width: 800, height: 50 }, // Ground
+        { x: 300, y: 250, width: 200, height: 20 },
+        { x: 100, y: 150, width: 200, height: 20 },
+        { x: 500, y: 200, width: 200, height: 20 },
+      ];
+
+      // Create platforms
+      platforms.forEach((platform) => {
+        const platformElement = document.createElement("div");
+        platformElement.className = "platform";
+        platformElement.style.left = platform.x + "px";
+        platformElement.style.top = platform.y + "px";
+        platformElement.style.width = platform.width + "px";
+        platformElement.style.height = platform.height + "px";
+        game.appendChild(platformElement);
+      });
+
+      // Create coins
+      function createCoin() {
+        const coin = document.createElement("div");
+        coin.className = "coin";
+        coin.style.left = Math.random() * 750 + "px";
+        coin.style.top = Math.random() * 300 + "px";
+        game.appendChild(coin);
+      }
+
+      // Create initial coins
+      for (let i = 0; i < 5; i++) {
+        createCoin();
+      }
+
+      // Key handlers
+      const keys = {};
+      document.addEventListener("keydown", (e) => {
+        keys[e.key] = true;
+      });
+      document.addEventListener("keyup", (e) => {
+        keys[e.key] = false;
+      });
+
+      function update() {
+        // Horizontal movement
+        if (keys["ArrowLeft"]) velocityX = -5;
+        else if (keys["ArrowRight"]) velocityX = 5;
+        else velocityX *= 0.8;
+
+        // Jump
+        if (keys["ArrowUp"] && !isJumping) {
+          velocityY = -15;
+          isJumping = true;
+        }
+
+        // Apply gravity
+        velocityY += 0.8;
+
+        // Update position
+        playerX += velocityX;
+        playerY += velocityY;
+
+        // Check platform collisions
+        let onPlatform = false;
+        platforms.forEach((platform) => {
+          if (
+            playerX + 40 > platform.x &&
+            playerX < platform.x + platform.width &&
+            playerY + 60 > platform.y &&
+            playerY + 60 < platform.y + platform.height
+          ) {
+            playerY = platform.y - 60;
+            velocityY = 0;
+            isJumping = false;
+            onPlatform = true;
+          }
+        });
+
+        // Check boundaries
+        if (playerX < 0) playerX = 0;
+        if (playerX > 760) playerX = 760;
+        if (playerY > 340) {
+          playerY = 340;
+          velocityY = 0;
+          isJumping = false;
+        }
+
+        // Check coin collisions
+        const coins = document.getElementsByClassName("coin");
+        Array.from(coins).forEach((coin) => {
+          const coinRect = coin.getBoundingClientRect();
+          const playerRect = player.getBoundingClientRect();
+
+          if (
+            playerRect.left < coinRect.right &&
+            playerRect.right > coinRect.left &&
+            playerRect.top < coinRect.bottom &&
+            playerRect.bottom > coinRect.top
+          ) {
+            coin.remove();
+            score += 10;
+            scoreElement.textContent = `Score: ${score}`;
+            createCoin();
+          }
+        });
+
+        // Update player position
+        player.style.left = playerX + "px";
+        player.style.top = playerY + "px";
+
+        requestAnimationFrame(update);
+      }
+
+      update();
+    </script>
+  </body>
+</html>
